@@ -1,5 +1,5 @@
 # pycharm stuff
-*/.idea/
+.idea/
 *.iml
 
 # virtual environments
