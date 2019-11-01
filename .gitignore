@@ -1,6 +1,7 @@
 # pycharm stuff
 .idea/
 *.iml
+**/__pycache__/
 
 # virtual environments
 venv/
