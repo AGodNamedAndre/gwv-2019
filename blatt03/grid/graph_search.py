@@ -85,6 +85,10 @@ class GraphSearch:
         # draw the path on top of the frontier
         draw_path(ax, self.frontier[-1][1])
 
+        # draw other nodes on frontier
+        for f in self.frontier[0:-1]:
+            ax.scatter(f[0][0], f[0][1], marker="x", color="green", s=500)
+
         # draw the explored nodes
         for e in self.explored:
             ax.scatter(e[0], e[1], marker="o", color="yellow", s=600)
