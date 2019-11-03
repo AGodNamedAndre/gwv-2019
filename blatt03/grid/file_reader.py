@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import numpy as np
+import matplotlib.pyplot as plt
+
 from typing import List
 
 
@@ -9,12 +11,7 @@ class GridFileReader:
         self.fn = fn
 
     def read(self):
-        with open(self.fn) as file:
-            lines: List[str] = file.read().splitlines()
-
-        for l in lines:
-            print(l)
-
-        na = np.asarray(lines)
-        print(na)
-        print(na[0][0])
+        with open(self.fn, 'r') as file:
+            m = file.read()
+        lines = m.splitlines()
+        return [[c for c in s] for s in lines]
