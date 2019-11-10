@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
+import itertools
 from typing import List, Tuple, TypeVar
 
 import matplotlib.pyplot as plt
 import numpy as np
 
+from blatt04.grid.node import Node
+
 T = TypeVar('T')
+
+WALKABLE = 0
 
 
 def mapchar(char: str) -> int:
@@ -15,6 +20,13 @@ def mapchar(char: str) -> int:
 
 
 def matrix_from(chars: List[List[str]]) -> np.array:
+    """
+    Safely create a numpy array from a list of lists of characters,
+    filling up with 'nan' to achieve matrix properties of shape N x M.
+
+    :param chars: Linewise representation of a grid environment
+    :return: numpy array with shape (height x (max-length width))
+    """
     # create numpy array with dimensions
     h: int = len(chars)
     w: int = max(len(s) for s in chars)
@@ -25,40 +37,59 @@ def matrix_from(chars: List[List[str]]) -> np.array:
     return mat
 
 
-def positions(chars: List[List[T]], value: T) -> List[Tuple[int, int]]:
+def positions(chars: List[List[T]], value: T) -> List[Node]:
     # TODO less shit, more python (list comprehension, smart index func, ..)
     ps = list()
     for y in range(len(chars)):
         for x in range(len(chars[y])):
             if chars[y][x] == value:
-                ps.append((x, y))
+                ps.append(Node(x, y))
     return ps
 
 
 class Environment:
 
     def __init__(self, chars: List[List[str]]):
-        self.starts = positions(chars, 's')
-        self.goals = positions(chars, 'g')
+        # determine nodes of interest
+        self._starts = positions(chars, 's')
+        self._goals = positions(chars, 'g')
+        self._portals = self.build_portals(chars)
+        # create matrix with only walkable information
         self.matrix = np.transpose(matrix_from(chars))
 
-    def get_starts(self) -> List[Tuple[int, int]]:
-        return self.starts
+    def build_portals(self, chars):
+        portals = dict()
+        for c in range(1, 9):
+            ps = positions(chars, str(c))
+            if len(ps) == 1:
+                continue  # no disappearing in portals
+            for src in ps:
+                portals.update({src: [dest for dest in ps if dest is not src]})
+        return portals
 
-    def is_goal(self, node: Tuple[int, int]) -> bool:
-        return node in self.goals
+    @property
+    def starts(self) -> List[Node]:
+        return self._starts
 
-    def walkable(self, node: Tuple[int, int]) -> bool:
-        return self.matrix[node[0]][node[1]] == 0
+    def check_goal(self, node: Node) -> bool:
+        return node in self._goals
 
-    def neighbours(self, node: Tuple[int, int]) -> List[Tuple[int, int]]:
-        return list(filter(
+    def walkable(self, node: Node) -> bool:
+        return self.matrix[node.x, node.y] == WALKABLE
+
+    def neighbours(self, node: Node) -> List[Node]:
+        walkables = filter(
             self.walkable,
-            [(node[0] + 1, node[1]),  # rechts
-             (node[0] - 1, node[1]),  # links
-             (node[0], node[1] + 1),  # unten
-             (node[0], node[1] - 1)]  # oben
-        ))
+            [Node(node.x + 1, node.y),  # rechts
+             Node(node.x - 1, node.y),  # links
+             Node(node.x, node.y + 1),  # unten
+             Node(node.x, node.y - 1)]  # oben
+        )
+        destinations = itertools.chain.from_iterable(map(self.use_portals, walkables))
+        return set(destinations)
+
+    def use_portals(self, node):
+        return self._portals.get(node, [node])
 
     def draw(self, ax):
         ax.imshow(np.transpose(self.matrix), cmap=plt.cm.get_cmap('Greys'))
@@ -67,5 +98,5 @@ class Environment:
 
         for s in self.starts:
             ax.scatter(s[0], s[1], marker="*", color="green", s=400)
-        for g in self.goals:
+        for g in self._goals:
             ax.scatter(g[0], g[1], marker="*", color="brown", s=400)
