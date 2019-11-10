@@ -34,7 +34,7 @@ Dies hatte bereits bei der Umgebung aus Blatt 3 die Auswirkung, dass Breitensuch
 
 
 
-> 4. Are there cases in which your program is unable to find a solution? Provide example
+> 4. Are there cases in which your program is unable to find a solution? Provide example
 >    mazes. (1 Pt.)
 
 Tiefen- und Breitensuche terminieren mit Lösung immer genau dann, wenn eine Lösung existiert. Sind alle Zielpositionen unzugänglich, kann keine Lösung gefunden werden. Bsp.:
