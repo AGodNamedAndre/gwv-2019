@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 from typing import List, Tuple, TypeVar
 
-from blatt04.grid.file_reader import GridFileReader
-
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -16,7 +14,7 @@ def mapchar(char: str) -> int:
     }.get(char, 0)
 
 
-def transform(chars: List[List[str]]) -> np.array:
+def matrix_from(chars: List[List[str]]) -> np.array:
     # create numpy array with dimensions
     h: int = len(chars)
     w: int = max(len(s) for s in chars)
@@ -39,11 +37,10 @@ def positions(chars: List[List[T]], value: T) -> List[Tuple[int, int]]:
 
 class Environment:
 
-    def __init__(self, reader: GridFileReader):
-        chars: List[List[str]] = reader.read()
+    def __init__(self, chars: List[List[str]]):
         self.starts = positions(chars, 's')
         self.goals = positions(chars, 'g')
-        self.matrix = np.transpose(transform(chars))
+        self.matrix = np.transpose(matrix_from(chars))
 
     def get_starts(self) -> List[Tuple[int, int]]:
         return self.starts

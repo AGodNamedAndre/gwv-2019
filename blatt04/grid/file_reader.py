@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
-import numpy as np
-import matplotlib.pyplot as plt
-
-from typing import List
 
 
-def matrix_from(self, input):
-    lines = input.splitlines()
-    return [[c for c in s] for s in lines]
+def char_lists_from(s):
+    r"""
+    Transform a String linewise (by newline chars) into lists of characters.
+
+    :param s: the input string
+    :return: a list of lists of characters
+
+    >>> char_lists_from("12\n34\n")
+    [['1', '2'], ['3', '4']]
+    """
+    lines = s.splitlines()
+    return [[c for c in l] for l in lines]
 
 
-class GridFileReader:
-
-    def __init__(self, fn: str):
-        self.fn = fn
-
-    def read(self):
-        with open(self.fn, 'r') as file:
-            file_content = file.read()
-        return matrix_from(file_content);
+def char_lists_from_fn(fn):
+    with open(fn, 'r') as file:
+        return char_lists_from(file.read())

@@ -23,11 +23,11 @@ class GraphSearch:
     Init search algorithm with components
     """
 
-    def __init__(self, env: Environment, frontier: List[Any]):
-        self.drawing: bool = True
-        self.environment: Environment = env
-        self.explored: Set[Tuple[int, int]] = set()
-        self.frontier: List[Tuple[Tuple[int, int], List[Tuple[int, int]]]] = frontier
+    def __init__(self, env: Environment, drawing=False):
+        self.drawing = drawing
+        self.environment = env
+        self.frontier = list()
+        self.explored = set()
 
         # Initialize frontier with Tuple(start, initial-path)
         # might get more complex e.g. Tuple((x,y), cost/g(p), path)
@@ -49,6 +49,9 @@ class GraphSearch:
 
     def search(self):
         for i in range(100):
+            # (*) draw the current state of our search
+            if self.drawing:
+                self.draw()
             # (1) frontier is empty -> return failure
             if not self.frontier:
                 return None
@@ -68,9 +71,6 @@ class GraphSearch:
                 p = list(path)
                 p.append(n)
                 self.frontier.append((n, p))
-            # (*) draw the current state of our search
-            if self.drawing:
-                self.draw()
 
     def draw(self):
         # TODO move this to somewhere#init_visualization
@@ -87,11 +87,11 @@ class GraphSearch:
 
         # draw other nodes on frontier
         for f in self.frontier[0:-1]:
-            ax.scatter(f[0][0], f[0][1], marker="x", color="green", s=500)
+            ax.scatter(f[0][0], f[0][1], marker="o", facecolors='none', edgecolors="green", s=500)
 
         # draw the explored nodes
         for e in self.explored:
-            ax.scatter(e[0], e[1], marker="o", color="yellow", s=600)
+            ax.scatter(e[0], e[1], marker="x", color="green", s=600)
 
         # display the plot to the user
         plt.grid(linestyle='dashed')
