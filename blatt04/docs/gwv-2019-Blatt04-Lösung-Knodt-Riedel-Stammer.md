@@ -6,7 +6,7 @@ Abgabe: So., 10.11.2019
 
 
 
-> 1. Implement the blind search strategy "breadth first" to find a path for the robot.
+> 1. Implement the blind search strategy "breadth first" to find a path for the robot.
 > (3 Pt.)
 
 Siehe Implementierung in *breadth_first.py*
@@ -15,7 +15,7 @@ Die Frontier wird durch ein `deque`(Queue) mit `popleft`, und `append`/`extend` 
 
 
 
-> 2. Implement the blind search strategy "depth first" to find a path for the robot. (3 Pt.)
+> 2. Implement the blind search strategy "depth first" to find a path for the robot. (3 Pt.)
 
 Siehe Implementierung in *depth_first.py*
 
@@ -44,10 +44,10 @@ Tiefen- und Breitensuche terminieren mit Lösung immer genau dann, wenn eine Lö
 
 
 
-> 5. The Figure above shows a modified environment. There are mysterious portals that
->    transport the robot from one field to a pre-determined eld far away. They are
->    denoted with numbers, that is if the robot enters a field with a 1, it is automatically
->    teleported to the other field with a 1 and so on. Modify your program to cope with
+> 5. The Figure above shows a modified environment. There are mysterious portals that
+>    transport the robot from one field to a pre-determined field far away. They are
+>    denoted with numbers, that is if the robot enters a field with a 1, it is automatically
+>    teleported to the other field with a 1 and so on. Modify your program to cope with
 >    this change. (3 Pt.)
 
 Siehe (angepasste) Implementierung der *environment.py* (`build_portals` und `use_portals`)
