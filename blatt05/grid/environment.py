@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import itertools
+from typing import List, TypeVar
+
 import matplotlib.pyplot as plt
 import numpy as np
 
-from typing import List, Tuple, TypeVar
-from .node import Node
+from blatt05.grid.node import Node
 
 T = TypeVar('T')
 
@@ -46,6 +47,10 @@ def positions(chars: List[List[T]], value: T) -> List[Node]:
     return ps
 
 
+def manhattan_distance(a, b):
+    return abs(a.x - b.x) + abs(a.y - b.y)
+
+
 class Environment:
 
     def __init__(self, chars: List[List[str]]):
@@ -66,7 +71,16 @@ class Environment:
                 portals.update({src: [dest for dest in ps if dest is not src]})
         return portals
 
-    @property
+    # @property
+    def heuristic(self, node):  # use manhattan distance from now to goal
+        return min([manhattan_distance(node, goal) for goal in self._goals])
+
+    def costs(self, path):  # manhattan distance to actual node
+        return manhattan_distance(path[-1], path[0]) if len(path) > 1 else 0
+
+    def total_estimate(self, path):
+        return self.costs(path) + self.heuristic(path[0])
+
     def starts(self) -> List[Node]:
         return self._starts
 
