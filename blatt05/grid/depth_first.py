@@ -2,24 +2,20 @@
 import time
 
 from collections import deque
-from .environment import Environment
-
-CYCLE_CHECKING = 'cc'
-MULTIPLE_PATH_PRUNING = 'mpp'
+from blatt05.grid.environment import Environment
 
 
 def find_path_with_stats(env: Environment, mode=None):
     start_time = time.time()
-    solution = find_path(env, mode)
+    solution = find_path(env)
     print("Took {} seconds.".format(time.time() - start_time))
     return solution
 
 
-def find_path(env: Environment, mode=None):
+def find_path(env: Environment):
     """
     Find a path between start and end nodes in the given environment
 
-    :param mode: One of MPP, CC or None
     :param env: Environment to search for a path between start and end nodes
     :return: A solution path or None
     """
@@ -36,13 +32,8 @@ def find_path(env: Environment, mode=None):
             return path
         # update explored/closed set
         explored.add(node)
-        # add neighbours to frontier
-        neighbours = env.neighbours(node)
-        # cycle checking - no neighbours that are on own path
-        if mode == CYCLE_CHECKING:
-            neighbours = [n for n in neighbours if n not in path]
         # multiple path pruning (already implies no cycles)
-        if mode == MULTIPLE_PATH_PRUNING:
-            neighbours = [n for n in neighbours if n not in explored]
+        neighbours = [n for n in env.neighbours(node) if n not in explored]
+        # add neighbours to frontier
         frontier.extendleft([[n] + path for n in neighbours])
     return None

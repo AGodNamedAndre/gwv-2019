@@ -1,33 +1,32 @@
 #!/usr/bin/env python3
-import heapq
 import time
 from functools import total_ordering
+from queue import PriorityQueue
 
 from blatt05.grid.environment import Environment
 
-CYCLE_CHECKING = 'cc'
-MULTIPLE_PATH_PRUNING = 'mpp'
+
+def manhattan_distance(a, b):
+    return abs(a.x - b.x) + abs(a.y - b.y)
+
+
+def heuristic(node, goals):  # use manhattan distance from now to goal
+    return min([manhattan_distance(node, goal) for goal in goals])
+
+    # def total_estimate(self, path):
+    #   return self.costs(path) + self.heuristic(path[0])
 
 
 @total_ordering
 class Path:
-    def __init__(self, path, env):
-        self._env = env
+    def __init__(self, path, cost, estimate):
         self._path = path
-        self._total_estimate = env.total_estimate(path)
+        self._cost = cost
+        self._estimate = estimate
         self._node = path[0]
 
-    #    def __cmp__(self, obj):
-    #       if obj == None:
-    #          return -1
-    #     if not isinstance(obj, someClass):
-    #        return -1
-
-    def update_costs(self):
-        self._total_estimate = self._env.total_estimate(self._path)
-
-    def add_node(self, node):
-        return Path([node] + self._path, self._env)
+    def with_head(self, node, cost, estimate):
+        return Path([node] + self._path, self._cost + cost, estimate)
 
     def node(self):
         return self._node
@@ -35,70 +34,83 @@ class Path:
     def path(self):
         return self._path
 
-    def __eq__(self, other):
-        return self._total_estimate == other._total_estimate
+    def total_estimate(self):
+        return self._cost + self._estimate
 
-    def __ne__(self, other):
-        return not (self == other)
+    def __eq__(self, other):
+        return self.total_estimate() == other.total_estimate()
 
     def __lt__(self, other):
-        return self._total_estimate < other._total_estimate
+        return self.total_estimate() < other.total_estimate()
+        # prefer actual low cost of a path
+        # if self.total_estimate() < other.total_estimate():
+        #     return True
+        # elif self.total_estimate() > other.total_estimate():
+        #     return False
+        # else:
+        #     return self._cost > other._cost
 
     def __repr__(self):
-        return "%s" % str(self._total_estimate)
+        return "(%s f=%s+%s)" % (self._node, self._cost, self._estimate)
 
 
-class PriorityQueue:
-    def __init__(self, inp):
-        heapq.heapify(inp)
-        self._queue = inp
+# class PriorityQueue:
+#     def __init__(self, inp):
+#         heapq.heapify(inp)
+#         self._queue = inp
+#
+#     def popleft(self):
+#         return heapq.heappop(self._queue)
+#
+#     def extend(self, inp):
+#         for n in inp:
+#             heapq.heappush(self._queue, n)
+#
+#     def is_empty(self):
+#         return len(self._queue) == 0
+#
+#     def __repr__(self):
+#         return str(list(self._queue))
+#
 
-    def popleft(self):
-        return self._queue.pop(0)
-
-    def extend(self, inp):
-        [heapq.heappush(self._queue, n) for n in inp]
-
-    def is_empty(self):
-        return len(self._queue) == 0
-
-
-def find_path_with_stats(env: Environment, mode=None):
+def find_path_with_stats(env: Environment):
     start_time = time.time()
-    solution = find_path(env, mode)
+    solution = find_path(env)
     print("Took {} seconds.".format(time.time() - start_time))
     return solution
 
 
-def find_path(env: Environment, mode=None):
+def find_path(env: Environment):
     """
     Find a path between start and end nodes in the given environment
 
-    :param mode: One of MPP, CC or None
     :param env: Environment to search for a path between start and end nodes
     :return: A solution path or None
     """
     # initialize search with single element starting paths
 
-    frontier = PriorityQueue([Path([s], env) for s in env.starts()])
+    frontier = PriorityQueue()
+    for s in env.starts:
+        frontier.put(Path([s], 0, heuristic(s, env.goals)))
     explored = set()
     # while frontier not empty
-    while not frontier.is_empty():
+    iteration = 0
+    while not frontier.empty():
+        iteration += 1
         # select and remove node from frontier
-        path = frontier.popleft()
+        path = frontier.get()
         node = path.node()
+        explored.add(node)
         # check if node is a goal state
         if env.check_goal(node):
+            print("Iterations: " + str(iteration))
+            print("Length of s: " + str(len(path.path())))
             return path.path()
-        # update explored/closed set
-        explored.add(node)
+        # cycle checking (0-cost cycles can get ugly)
+        neighbours = [n for n in env.neighbours(node) if n not in path.path()]
+        # TODO can we do path pruning or will this hurt optimality?
+        # neighbours = [n for n in neighbours if n not in explored]
         # add neighbours to frontier
-        neighbours = env.neighbours(node)
-        # cycle checking - no neighbours that are on own path
-        if mode == CYCLE_CHECKING:
-            neighbours = [n for n in neighbours if n not in path.path()]
-        # multiple path pruning (already implies no cycles)
-        if mode == MULTIPLE_PATH_PRUNING:
-            neighbours = [n for n in neighbours if n not in explored]
-        frontier.extend([path.add_node(n) for n in neighbours])
+        for n in neighbours:
+            frontier.put(path.with_head(n, 1, heuristic(n, env.goals)))
     return None

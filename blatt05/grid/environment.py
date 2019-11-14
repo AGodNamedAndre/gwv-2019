@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import itertools
-from typing import List, TypeVar
-
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
+
+from typing import List, TypeVar
 
 from blatt05.grid.node import Node
 
@@ -12,7 +12,7 @@ T = TypeVar('T')
 WALKABLE = 0
 
 
-def mapchar(char: str) -> int:
+def map_char(char: str) -> int:
     return {
         'x': 1,
         ' ': 0
@@ -33,7 +33,7 @@ def matrix_from(chars: List[List[str]]) -> np.array:
     mat = np.full([h, w], np.nan)
     # manual copy with ranges to support non rectangular inputs
     for i in range(len(chars)):
-        np.copyto(mat[i, 0:len(chars[i])], [mapchar(c) for c in chars[i]])
+        np.copyto(mat[i, 0:len(chars[i])], [map_char(c) for c in chars[i]])
     return mat
 
 
@@ -45,10 +45,6 @@ def positions(chars: List[List[T]], value: T) -> List[Node]:
             if chars[y][x] == value:
                 ps.append(Node(x, y))
     return ps
-
-
-def manhattan_distance(a, b):
-    return abs(a.x - b.x) + abs(a.y - b.y)
 
 
 class Environment:
@@ -71,18 +67,13 @@ class Environment:
                 portals.update({src: [dest for dest in ps if dest is not src]})
         return portals
 
-    # @property
-    def heuristic(self, node):  # use manhattan distance from now to goal
-        return min([manhattan_distance(node, goal) for goal in self._goals])
-
-    def costs(self, path):  # manhattan distance to actual node
-        return manhattan_distance(path[-1], path[0]) if len(path) > 1 else 0
-
-    def total_estimate(self, path):
-        return self.costs(path) + self.heuristic(path[0])
-
+    @property
     def starts(self) -> List[Node]:
         return self._starts
+
+    @property
+    def goals(self):
+        return self._goals
 
     def check_goal(self, node: Node) -> bool:
         return node in self._goals
