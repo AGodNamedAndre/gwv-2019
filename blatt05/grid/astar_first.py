@@ -13,12 +13,10 @@ def manhattan_distance(a, b):
 def heuristic(node, goals):  # use manhattan distance from now to goal
     return min([manhattan_distance(node, goal) for goal in goals])
 
-    # def total_estimate(self, path):
-    #   return self.costs(path) + self.heuristic(path[0])
-
 
 @total_ordering
 class Path:
+    # TODO check out alternative data structures: recursive or algebraic data types
     def __init__(self, path, cost, estimate):
         self._path = path
         self._cost = cost
@@ -41,37 +39,20 @@ class Path:
         return self.total_estimate() == other.total_estimate()
 
     def __lt__(self, other):
-        return self.total_estimate() < other.total_estimate()
-        # prefer actual low cost of a path
-        # if self.total_estimate() < other.total_estimate():
-        #     return True
-        # elif self.total_estimate() > other.total_estimate():
-        #     return False
-        # else:
-        #     return self._cost > other._cost
+        # (A) go easy on comparison:
+        # return self.total_estimate() < other.total_estimate()
+        # (B) prefer actual low cost of a path
+        # Probably doesn't help in the general case (only a fraction of paths should have equal f-value)
+        if self.total_estimate() < other.total_estimate():
+            return True
+        elif self.total_estimate() > other.total_estimate():
+            return False
+        else:
+            return self._cost > other._cost
 
     def __repr__(self):
         return "(%s f=%s+%s)" % (self._node, self._cost, self._estimate)
 
-
-# class PriorityQueue:
-#     def __init__(self, inp):
-#         heapq.heapify(inp)
-#         self._queue = inp
-#
-#     def popleft(self):
-#         return heapq.heappop(self._queue)
-#
-#     def extend(self, inp):
-#         for n in inp:
-#             heapq.heappush(self._queue, n)
-#
-#     def is_empty(self):
-#         return len(self._queue) == 0
-#
-#     def __repr__(self):
-#         return str(list(self._queue))
-#
 
 def find_path_with_stats(env: Environment):
     start_time = time.time()
@@ -106,10 +87,11 @@ def find_path(env: Environment):
             print("Iterations: " + str(iteration))
             print("Length of s: " + str(len(path.path())))
             return path.path()
-        # cycle checking (0-cost cycles can get ugly)
-        neighbours = [n for n in env.neighbours(node) if n not in path.path()]
-        # TODO can we do path pruning or will this hurt optimality?
-        # neighbours = [n for n in neighbours if n not in explored]
+        # (1) cycle checking (0-cost cycles can get ugly) - not needed due to path pruning
+        # neighbours = [n for n in env.neighbours(node) if n not in path.path()]
+        # (2) path pruning (because for a consistent heuristic, the first found path to a node is optimal)
+        # otherwise: replace sub-paths to neighbours if they have a worse g(x)
+        neighbours = [n for n in (env.neighbours(node)) if n not in explored]
         # add neighbours to frontier
         for n in neighbours:
             frontier.put(path.with_head(n, 1, heuristic(n, env.goals)))
