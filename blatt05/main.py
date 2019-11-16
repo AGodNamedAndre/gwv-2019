@@ -9,4 +9,8 @@ from blatt05.grid.file_reader import char_lists_from_fn
 
 # TODO init visualization
 env = Environment(char_lists_from_fn("input/blatt3_environment.txt"))
-print(astar_first.find_path_with_stats(env))
+# print(astar_first.find_path_with_stats(env))
+solution = astar_first.find_path_rec(env)
+print("***")
+print("length: " + str(len(solution)))
+print(solution)

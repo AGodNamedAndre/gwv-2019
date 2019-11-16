@@ -2,8 +2,10 @@
 import time
 from functools import total_ordering
 from queue import PriorityQueue
+from typing import Set, List
 
 from blatt05.grid.environment import Environment
+from blatt05.grid.node import Node
 
 
 def manhattan_distance(a, b):
@@ -40,15 +42,15 @@ class Path:
 
     def __lt__(self, other):
         # (A) go easy on comparison:
-        # return self.total_estimate() < other.total_estimate()
+        return self.total_estimate() < other.total_estimate()
         # (B) prefer actual low cost of a path
         # Probably doesn't help in the general case (only a fraction of paths should have equal f-value)
-        if self.total_estimate() < other.total_estimate():
-            return True
-        elif self.total_estimate() > other.total_estimate():
-            return False
-        else:
-            return self._cost > other._cost
+        # if self.total_estimate() < other.total_estimate():
+        #     return True
+        # elif self.total_estimate() > other.total_estimate():
+        #     return False
+        # else:
+        #     return self._cost > other._cost
 
     def __repr__(self):
         return "(%s f=%s+%s)" % (self._node, self._cost, self._estimate)
@@ -96,3 +98,34 @@ def find_path(env: Environment):
         for n in neighbours:
             frontier.put(path.with_head(n, 1, heuristic(n, env.goals)))
     return None
+
+
+def find_path_rec(env: Environment):
+    frontier = [Path([s], 0, heuristic(s, env.goals)) for s in env.starts]
+    explored = set()
+    i = 0
+    while frontier and not env.check_goal(frontier[0].node()):
+        frontier, explored = find_next_step(env, heuristic, frontier, explored)
+        i += 1
+    print("After {} iterations: ".format(i))
+    print(frontier)
+    print(explored)
+    if frontier:
+        return frontier[0].path()
+    else:
+        return None
+
+
+def find_next_step(env: Environment, heuristic, frontier: List[Path], explored: Set[Node]):
+    # select and remove node from frontier
+    path, *frontier = frontier
+    # add current to closed
+    explored = explored | {(path.node())}
+    # (1) cycle checking (0-cost cycles can get ugly) - not needed due to path pruning
+    # neighbours = [n for n in env.neighbours(node) if n not in path.path()]
+    # (2) path pruning (because for a consistent heuristic, the first found path to a node is optimal)
+    # otherwise: replace sub-paths to neighbours if they have a worse g(x)
+    neighbours = [n for n in (env.neighbours(path.node())) if n not in explored]
+    # add neighbours to frontier
+    frontier = sorted([path.with_head(n, 1, heuristic(n, env.goals)) for n in neighbours] + frontier)
+    return frontier, explored
