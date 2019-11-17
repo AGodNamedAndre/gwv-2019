@@ -80,12 +80,12 @@ class Animation:
 
     def draw(self):
         self.init_background()
-        delay = 500
+        delay = 400
         pause_time = 3000
         num_frames = len(self.frames) + round(pause_time / delay)
-        anim = animation.FuncAnimation(self.fig, self.draw_frame, frames=50, interval=delay)
+        anim = animation.FuncAnimation(self.fig, self.draw_frame, frames=num_frames, interval=delay)
         # anim = animation.FuncAnimation(self.fig, self.draw_frame, init_func=self.init_background,
         #                                        interval=200, blit=True, save_count=num_frames)
-        anim.save('output/yolo.gif', dpi=200, writer='imagemagick')
+        anim.save('output/yolo.gif', dpi=100, writer='imagemagick')
 
         os.system('start output/yolo.gif')

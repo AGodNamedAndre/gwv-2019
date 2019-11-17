@@ -23,13 +23,18 @@ def find_path(env: Environment):
     frontier = deque([[s] for s in env.starts])
     explored = set()
     # while frontier not empty
+    max_len = 0
+    iterations = 0
     while frontier:
+        if len(frontier) > max_len:
+            max_len = len(frontier)
+        iterations += 1
         # select and remove node from frontier
         path = frontier.popleft()
         node = path[0]
         # check if node is a goal state
         if env.check_goal(node):
-            return path
+            return path, iterations, max_len
         # update explored/closed set
         explored.add(node)
         # multiple path pruning (already implies no cycles)
