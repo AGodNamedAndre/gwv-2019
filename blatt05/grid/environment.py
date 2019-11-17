@@ -2,8 +2,12 @@
 import itertools
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.font_manager as mfm
 
-from typing import List, TypeVar
+from typing import List, TypeVar, Set
+
+from matplotlib.axes import Axes
+from matplotlib.axis import Axis
 
 from blatt05.grid.node import Node
 
@@ -53,19 +57,21 @@ class Environment:
         # determine nodes of interest
         self._starts = positions(chars, 's')
         self._goals = positions(chars, 'g')
-        self._portals = self.build_portals(chars)
+        self._portals, self._numbered_portals = self.build_portals(chars)
         # create matrix with only walkable information
         self.matrix = np.transpose(matrix_from(chars))
 
     def build_portals(self, chars):
         portals = dict()
+        mapped = dict()
         for c in range(1, 9):
             ps = positions(chars, str(c))
+            mapped.update({c: ps})
             if len(ps) == 1:
                 continue  # no disappearing in portals
             for src in ps:
                 portals.update({src: [dest for dest in ps if dest is not src]})
-        return portals
+        return portals, mapped
 
     @property
     def starts(self) -> List[Node]:
@@ -75,13 +81,17 @@ class Environment:
     def goals(self):
         return self._goals
 
+    @property
+    def portals(self):
+        return self._portals
+
     def check_goal(self, node: Node) -> bool:
         return node in self._goals
 
     def walkable(self, node: Node) -> bool:
         return self.matrix[node.x, node.y] == WALKABLE
 
-    def neighbours(self, node: Node) -> List[Node]:
+    def neighbours(self, node: Node) -> Set[Node]:
         walkables = filter(
             self.walkable,
             [Node(node.x + 1, node.y),  # rechts
@@ -95,12 +105,27 @@ class Environment:
     def use_portals(self, node):
         return self._portals.get(node, [node])
 
-    def draw(self, ax):
+    def draw(self, ax: Axes):
         ax.imshow(np.transpose(self.matrix), cmap=plt.cm.get_cmap('Greys'))
-        ax.set_xticks(np.arange(-0.5, self.matrix.shape[0] + 0.5, 1))
-        ax.set_yticks(np.arange(-0.5, self.matrix.shape[1] + 0.5, 1))
+        ax.set_xlim(-0.5, self.matrix.shape[0] - 0.5)
+        ax.set_ylim(-0.5, self.matrix.shape[1] - 0.5)
+        ax.set_xticks(np.arange(0, self.matrix.shape[0], 1))
+        ax.set_yticks(np.arange(0, self.matrix.shape[1], 1))
+        ax.set_xticks(np.arange(0.5, self.matrix.shape[0] + 0.5, 1), minor=True)
+        ax.set_yticks(np.arange(0.5, self.matrix.shape[1] + 0.5, 1), minor=True)
+        ax.grid(which='minor', alpha=0.5)
 
+        prop = mfm.FontProperties(fname='res/pp.ttf')
         for s in self.starts:
-            ax.scatter(s[0], s[1], marker="*", color="green", s=400)
+            ax.text(s.x, s.y, u"\u24C8", fontproperties=prop, fontsize=14,
+                    horizontalalignment='center', verticalalignment='center')
+            # ax.scatter(s.x, s.y, marker="$\\alpha$", color="green", s=200)
         for g in self._goals:
-            ax.scatter(g[0], g[1], marker="*", color="brown", s=400)
+            ax.text(g.x, g.y, u"\u24BC", fontproperties=prop, fontsize=14,
+                    horizontalalignment='center', verticalalignment='center')
+
+        icons = {1: u"\u2460", 2: u"\u2461", 3: u"\u2462", 4: u"\u2463", 5: u"\u2464", 6: u"\u2465"}
+        for c, ps in self._numbered_portals.items():
+            for p in ps:
+                ax.text(p.x, p.y, icons.get(c), fontproperties=prop, fontsize=14,
+                        horizontalalignment='center', verticalalignment='center')

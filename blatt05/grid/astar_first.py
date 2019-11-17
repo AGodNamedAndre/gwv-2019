@@ -5,15 +5,8 @@ from queue import PriorityQueue
 from typing import Set, List
 
 from blatt05.grid.environment import Environment
+from blatt05.grid.heuristics import manhattan_distance_to_nodes, PortalHeuristic, ManhattanDistance
 from blatt05.grid.node import Node
-
-
-def manhattan_distance(a, b):
-    return abs(a.x - b.x) + abs(a.y - b.y)
-
-
-def heuristic(node, goals):  # use manhattan distance from now to goal
-    return min([manhattan_distance(node, goal) for goal in goals])
 
 
 @total_ordering
@@ -28,9 +21,11 @@ class Path:
     def with_head(self, node, cost, estimate):
         return Path([node] + self._path, self._cost + cost, estimate)
 
+    @property
     def node(self):
         return self._node
 
+    @property
     def path(self):
         return self._path
 
@@ -38,19 +33,18 @@ class Path:
         return self._cost + self._estimate
 
     def __eq__(self, other):
-        return self.total_estimate() == other.total_estimate()
+        return self == other
 
     def __lt__(self, other):
-        # (A) go easy on comparison:
-        return self.total_estimate() < other.total_estimate()
+        # (A) go easy on comparison
+        # return self.total_estimate() < other.total_estimate()
         # (B) prefer actual low cost of a path
-        # Probably doesn't help in the general case (only a fraction of paths should have equal f-value)
-        # if self.total_estimate() < other.total_estimate():
-        #     return True
-        # elif self.total_estimate() > other.total_estimate():
-        #     return False
-        # else:
-        #     return self._cost > other._cost
+        if self.total_estimate() < other.total_estimate():
+            return True
+        elif self.total_estimate() > other.total_estimate():
+            return False
+        else:
+            return self._cost > other._cost
 
     def __repr__(self):
         return "(%s f=%s+%s)" % (self._node, self._cost, self._estimate)
@@ -74,7 +68,7 @@ def find_path(env: Environment):
 
     frontier = PriorityQueue()
     for s in env.starts:
-        frontier.put(Path([s], 0, heuristic(s, env.goals)))
+        frontier.put(Path([s], 0, manhattan_distance_to_nodes(s, env.goals)))
     explored = set()
     # while frontier not empty
     iteration = 0
@@ -82,13 +76,11 @@ def find_path(env: Environment):
         iteration += 1
         # select and remove node from frontier
         path = frontier.get()
-        node = path.node()
+        node = path.node
         explored.add(node)
         # check if node is a goal state
         if env.check_goal(node):
-            print("Iterations: " + str(iteration))
-            print("Length of s: " + str(len(path.path())))
-            return path.path()
+            return path.path
         # (1) cycle checking (0-cost cycles can get ugly) - not needed due to path pruning
         # neighbours = [n for n in env.neighbours(node) if n not in path.path()]
         # (2) path pruning (because for a consistent heuristic, the first found path to a node is optimal)
@@ -96,36 +88,49 @@ def find_path(env: Environment):
         neighbours = [n for n in (env.neighbours(node)) if n not in explored]
         # add neighbours to frontier
         for n in neighbours:
-            frontier.put(path.with_head(n, 1, heuristic(n, env.goals)))
+            frontier.put(path.with_head(n, 1, manhattan_distance_to_nodes(n, env.goals)))
     return None
 
 
-def find_path_rec(env: Environment):
-    frontier = [Path([s], 0, heuristic(s, env.goals)) for s in env.starts]
+def find_path_rec(env: Environment, heuristic):
+    # statistics
+    iterations = 0
+    frames = []
+
+    # init
+    # heuristic = PortalHeuristic(env.portals, env.goals)
+    # heuristic = ManhattanDistance(env.goals)
+    frontier = sorted([Path([s], 0, heuristic.lower_bound(s)) for s in env.starts])
     explored = set()
-    i = 0
-    while frontier and not env.check_goal(frontier[0].node()):
-        frontier, explored = find_next_step(env, heuristic, frontier, explored)
-        i += 1
-    print("After {} iterations: ".format(i))
-    print(frontier)
-    print(explored)
+
+    while frontier and not env.check_goal(frontier[0].node):
+        frontier, explored = find_next_step(env, heuristic.lower_bound, frontier, explored)
+
+        # stats
+        iterations += 1
+        frames.append((frontier, explored))
+
+    print("Termination after: {} iterations/expansions".format(iterations))
+    print("Frontier size: {} paths".format(len(frontier)))
+
     if frontier:
-        return frontier[0].path()
+        return frontier[0].path, frames
     else:
-        return None
+        return None, frames
 
 
 def find_next_step(env: Environment, heuristic, frontier: List[Path], explored: Set[Node]):
     # select and remove node from frontier
-    path, *frontier = frontier
+    cur, *frontier = frontier
     # add current to closed
-    explored = explored | {(path.node())}
+    explored = explored | {cur.node}
+    # (0) multi path pruning: remove other paths to the current node (which have worse f-value)
+    frontier = list(filter(lambda p: p.node != cur.node, frontier))
     # (1) cycle checking (0-cost cycles can get ugly) - not needed due to path pruning
     # neighbours = [n for n in env.neighbours(node) if n not in path.path()]
     # (2) path pruning (because for a consistent heuristic, the first found path to a node is optimal)
-    # otherwise: replace sub-paths to neighbours if they have a worse g(x)
-    neighbours = [n for n in (env.neighbours(path.node())) if n not in explored]
+    # otherwise, for non-consisten heuristics: replace sub-paths to neighbours if they have a worse g(x)
+    neighbours = [n for n in (env.neighbours(cur.node)) if n not in explored]
     # add neighbours to frontier
-    frontier = sorted([path.with_head(n, 1, heuristic(n, env.goals)) for n in neighbours] + frontier)
+    frontier = sorted([cur.with_head(n, 1, heuristic(n)) for n in neighbours] + frontier)
     return frontier, explored
