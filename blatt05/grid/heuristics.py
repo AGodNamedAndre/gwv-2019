@@ -60,10 +60,12 @@ class PortalHeuristic:
         for subset in self._pset:
             for goal in self._goals:
                 heuristics.append(self.manhattan_with_portals(subset, goal))
-        if heuristics:
-            self._heuristics = heuristics
-        else:
-            self._heuristics = [self.manhattan_with_portals([], g) for g in self._goals]
+#        if heuristics:
+ #           self._heuristics = heuristics
+  #      else:
+   #         self._heuristics = [self.manhattan_with_portals([], g) for g in self._goals]
+        heuristics.append(self.manhattan_with_portals([], g)) for g in self.goals
+        self._heuristics = heuristics
 
     def lower_bound(self, node):
         return min([manhattan_distance(node, mwp['start']) + mwp['value'] for mwp
