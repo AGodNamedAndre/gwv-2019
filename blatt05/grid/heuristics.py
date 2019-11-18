@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
+import itertools
 from itertools import chain, combinations
 from math import ceil
-from typing import List
+from typing import List, Dict
 
+from blatt05.grid import a_star
+from blatt05.grid.environment import GraphEnvironment
 from blatt05.grid.node import Node
 
 
@@ -35,6 +38,7 @@ class ManhattanDistance:
 
 
 class PortalHeuristic:
+    # TODO BUG: Heuristik geht immer durch Portale
     def __init__(self, portals, goals):
         self._portals = portals
         self._goals = goals
@@ -68,3 +72,31 @@ class PortalHeuristic:
     def lower_bound_path(self, node):
         return min([(manhattan_distance(node, mwp['start']) + mwp['value'], mwp['start']) for mwp
                     in self._heuristics])
+
+class PortalHeuristic2:
+    def __init__(self, portals: Dict[Node, List[Node]], goals):
+        # TODO portals: needs better structure - collection of edges?
+        # build edges
+        edges = dict()
+        # buid portal 0-cost edges
+        for src in portals.keys():
+            for dest in portals.get(src):
+                edges.update({(src, dest): 0})
+        # build manhattan cost edges between nodes
+        nodes = portals.keys() | goals
+        for (n1, n2) in itertools.product(nodes, nodes):
+            if n1 != n2 and not (n1, n2) in edges:
+                edges.update({(n1, n2): manhattan_distance(n1, n2)})
+        # find shortest paths to all nodes
+        for n in nodes:
+            # use real goals as starts, and node n as goals
+            env = GraphEnvironment(nodes, edges, goals, [n])
+            path, _ = a_star.find_path_rec(env, ManhattanDistance([n]))
+            print("path: {}, cost: {}, full path: {}".format(path, path.total_estimate(), path.path))
+
+    def lower_bound(self, node: Node):
+        pass
+
+    def lower_bound_path(self, node: Node):
+        # Use this only for drawing the heuristic
+        pass

@@ -118,7 +118,7 @@ def find_path_rec(env: Environment, heuristic):
     print("Max frontier size in all runs: {} paths".format(max_len))
 
     if frontier:
-        return frontier[0].path, frames
+        return frontier[0], frames
     else:
         return None, frames
 
@@ -136,5 +136,6 @@ def find_next_step(env: Environment, heuristic, frontier: List[Path], explored: 
     # otherwise, for non-consisten heuristics: replace sub-paths to neighbours if they have a worse g(x)
     neighbours = [n for n in (env.neighbours(cur.node)) if n not in explored]
     # add neighbours to frontier
-    frontier = sorted([cur.with_head(n, 1, heuristic(n)) for n in neighbours] + frontier)
+    # TODO get actual cost from neighbours
+    frontier = sorted([cur.with_head(n, c, heuristic(n)) for n, c in neighbours] + frontier)
     return frontier, explored

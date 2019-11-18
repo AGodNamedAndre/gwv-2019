@@ -16,7 +16,6 @@ def find_path(env: Environment, mode=None):
     """
     Find a path between start and end nodes in the given environment
 
-    :param mode: One of MPP, CC or None
     :param env: Environment to search for a path between start and end nodes
     :return: A solution path or None
     """

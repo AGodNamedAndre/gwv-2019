@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 import itertools
-import numpy as np
-import matplotlib.pyplot as plt
+from typing import List, TypeVar, Set, Dict, Tuple
+
 import matplotlib.font_manager as mfm
-
-from typing import List, TypeVar, Set
-
+import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.axes import Axes
-from matplotlib.axis import Axis
 
 from blatt05.grid.node import Node
 
@@ -129,3 +127,19 @@ class Environment:
             for p in ps:
                 ax.text(p.x, p.y, icons.get(c), fontproperties=prop, fontsize=14,
                         horizontalalignment='center', verticalalignment='center')
+
+class GraphEnvironment:
+    def __init__(self, nodes, edges: Dict[Tuple[Node, Node], int], starts, goals):
+        self._edges = edges
+        self.starts = starts
+        self.goals = goals
+
+    def neighbours(self, node):
+        neighbours = []
+        for edge, cost in self._edges.items():
+            if edge[0] == node:
+                neighbours.append((edge[1], cost))
+        return neighbours
+
+    def check_goal(self, node):
+        return node in self.goals
