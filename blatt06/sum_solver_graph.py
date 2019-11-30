@@ -7,7 +7,7 @@ class Environment:
         self._summe = summe
         self._symbols = set(a+b+summe)
         # self._search_order = self.search_order()
-        self._search_space = self.search_space()
+        # self._search_space = self.search_space()
         self._search_string = self.search_string()
         self._search_order = self.search_order()
         self._graph = self.make_graph()
