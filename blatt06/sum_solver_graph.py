@@ -69,9 +69,9 @@ class Environment:
         for i in range(max(len(self._a), len(self._b), len(self._summe))):
             if len(self._a[i]) > i:
                 _set.add(self._a[i])
-            if len(self._a[i]) > i:
+            if len(self._b[i]) > i:
                 _set.add(self._b[i])
-            if len(self._a[i]) > i:
+            if len(self._summe[i]) > i:
                 _set.add(self._summe[i])
 
             _dict[str(i)] = len(_set)
