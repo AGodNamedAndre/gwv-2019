@@ -56,8 +56,8 @@ class Environment:
     def make_graph(self):
         graph = []
         for i in range(len(self._search_order)-1):
-            a = self._search_order[i]
-            b = self._search_order[i+1]
+            a = self._search_order[-i]
+            b = self._search_order[-i+1]
             for n_a in self._init_variables[a]:
                 for n_b in self._init_variables[b]:
                     graph.append(('{}_{}'.format(a, n_a), '{}_{}'.format(b, n_b)))
@@ -121,3 +121,6 @@ class Environment:
             return int(a) + int(b) == int(summe)
         except:
             return False
+        
+    def get_graph(self):
+        return self._graph
