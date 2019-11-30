@@ -1,15 +1,17 @@
 import networkx as nx
 
 class Environment:
-    def __init__(self, a, b, summe):
+    def __init__(self, a, b, summe, v_range=(0,1,2,3,4,5,6,7,8,9)):
         self._a = a
         self._b = b
         self._summe = summe
         self._symbols = set(a+b+summe)
+        self._v_range = v_range
         # self._search_order = self.search_order()
         # self._search_space = self.search_space()
         self._search_string = self.search_string()
         self._search_order = self.search_order()
+        self._init_variables = self.init_variables()
         self._graph = self.make_graph()
         self._partial_sum_depth_dict = self.get_parital_sum_depth_dict()
 
@@ -29,9 +31,9 @@ class Environment:
         search_s = ''
 
         for i in range(max(len(self._a), len(self._b), len(self._summe))):
-            search_s += self._a[i] if len(self._a[i]) > i else '0'
-            search_s += self._b[i] if len(self._b[i]) > i else '0'
-            search_s += self._summe[i] if len(self._summe[i]) > i else '0'
+            search_s += self._a[-i] if len(self._a) > i else '0'
+            search_s += self._b[-i] if len(self._b) > i else '0'
+            search_s += self._summe[i] if len(self._summe) > i else '0'
 
         return search_s
 
@@ -40,14 +42,14 @@ class Environment:
         is_set = set()
 
         for i in range(max(len(self._a), len(self._b), len(self._summe))):
-            if not self._a[i] in order and not self._a[i] in is_set and len(self._a) > i:
-                order.append(self._a[i])
+            if not self._a[-i] in order and not self._a[-i] in is_set and len(self._a) > i:
+                order.append(self._a[-i])
 
-            if not self._b[i] in order and not self._b[i] in is_set and len(self._b) > i:
-                order.append(self._a[i])
+            if not self._b[-i] in order and not self._b[-i] in is_set and len(self._b) > i:
+                order.append(self._a[-i])
 
-            if not self._summe[i] in order and len(self._summe) > i:
-                is_set.add(self._summe[i])
+            if not self._summe[-i] in order and len(self._summe) > i:
+                is_set.add(self._summe[-i])
 
         return order
 
@@ -67,12 +69,12 @@ class Environment:
         _dict = {}
 
         for i in range(max(len(self._a), len(self._b), len(self._summe))):
-            if len(self._a[i]) > i:
-                _set.add(self._a[i])
-            if len(self._b[i]) > i:
-                _set.add(self._b[i])
-            if len(self._summe[i]) > i:
-                _set.add(self._summe[i])
+            if len(self._a) > i:
+                _set.add(self._a[-i])
+            if len(self._b) > i:
+                _set.add(self._b[-i])
+            if len(self._summe) > i:
+                _set.add(self._summe[-i])
 
             _dict[str(i)] = len(_set)
 
