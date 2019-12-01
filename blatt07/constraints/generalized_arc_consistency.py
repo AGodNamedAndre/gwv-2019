@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-from typing import Iterable
+from typing import Iterable, Any, Set, Dict, Callable
 
 import networkx as nx
-import matplotlib.pyplot as plt
 
 words = ["add", "ado", "age", "ago", "aid", "ail", "aim", "air",
          "and", "any", "ape", "apt", "arc", "are", "ark", "arm",
@@ -21,10 +20,9 @@ class Variable:
 
 
 class Constraint:
-    # TODO variables ordered, same as constraint fun parameters -> for evaluation
-    def __init__(self, name, constraint, variables):
+    def __init__(self, name, predicate: Callable[[Dict[str, Any]], bool], variables):
         self.name = name
-        self.constraint = constraint
+        self.predicate = predicate
         self.variables = variables
 
     def __repr__(self):
@@ -34,17 +32,33 @@ class Constraint:
     def scope(self):
         return self.variables
 
-    def is_satisfiable(self, value, others):
-        # TODO
+    def is_satisfiable(self, fixed, others):
+        assignment = fixed
+        domains = {o.name: o.domain for o in others}
+        return self._rec_is_satisfiable(assignment, domains)
+
+    # TODO @TailRecursion or something to protect the stack
+    def _rec_is_satisfiable(self, assignment, domains: Dict[str, Set[Any]]):
+        # all domains set to value
+        if not domains:
+            return self.is_satisfied(assignment)
+        # otherwise fixate values recursive
+        cur, *tail = domains
+        print(domains)
+        print(cur)
+        print(tail)
+        for v in cur[1]:
+            assignment_with_v = assignment + {cur[0]: v}
+            if self._rec_is_satisfiable(assignment_with_v, tail):
+                return True
         return False
 
-    def is_satisfied(self):
-        # TODO
-        return False
+    def is_satisfied(self, assignment):
+        return self.predicate(assignment)
 
 
 def gac(vs, cs: Iterable[Constraint]):
-    # put all edges (v, c) on open list (TODO: set-like structure)
+    # put all edges (v, c) on open list/set
     to_do = {(v, c) for c in cs for v in c.scope}
     while to_do:
         # current tuple of (V, C)
@@ -65,16 +79,18 @@ def gac(vs, cs: Iterable[Constraint]):
     return {v for c in cs for v in c.variables}
 
 
-x = Variable("X", {1, 2, 3})
-y = Variable("Y", {1, 2, 3})
+x = Variable('X', {1, 2, 3})
+y = Variable('Y', {1, 2, 3})
 
-x_smaller_y = Constraint("X<Y", lambda lh, rh: lh < rh, {x, y})
+# TODO lieber lokale Benamung der Variablen, e.g. {'X': x, 'Y': y} ?
+x_smaller_y = Constraint("X<Y", lambda assignment: assignment['X'] < assignment['Y'], {x, y})
 
 G = nx.Graph()
 G.add_edge(x, x_smaller_y)
 G.add_edge(y, x_smaller_y)
 
 print(gac({x, y}, {x_smaller_y}))
+
 
 # labeldict = {}
 # labeldict[x] = r'$X$'
