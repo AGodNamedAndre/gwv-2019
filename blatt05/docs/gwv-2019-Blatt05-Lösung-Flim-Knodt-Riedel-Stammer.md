@@ -40,9 +40,26 @@ Terminiert wird dann weil die Frontier leer ist und als Lösung wird `None` zur�
 
 Tiefensuche:
 
+```
+Termination after: 124 iterations/expansions
+Max frontier size in all runs: 45 paths
+```
+
 Breitensuche:
 
+```
+Termination after: 6772 iterations/expansions
+Max frontier size in all runs: 1600 paths
+```
+
 A*-Suche:
+
+```
+Termination after: 79 iterations/expansions
+Max frontier size in all runs: 19 paths
+```
+
+Anmerkung: Die Breitensuche-Ergebnisse sind überraschend hoch, hier scheinen unnötig oft verschiedene Pfade zu gleichen Knoten auf der Frontier zu liegen. (Ein Pruning, das bei der A*-Implementierung bereits eingebaut ist)
 
 
 
