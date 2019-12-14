@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import itertools
+
 from typing import Iterable, Any, Set, Dict, Callable
 
 import networkx as nx
@@ -33,23 +35,11 @@ class Constraint:
         return self.variables
 
     def is_satisfiable(self, fixed, others):
-        assignment = fixed
-        domains = {o.name: o.domain for o in others}
-        return self._rec_is_satisfiable(assignment, domains)
-
-    # TODO @TailRecursion or something to protect the stack
-    def _rec_is_satisfiable(self, assignment, domains: Dict[str, Set[Any]]):
-        # all domains set to value
-        if not domains:
-            return self.is_satisfied(assignment)
-        # otherwise fixate values recursive
-        cur, *tail = domains
-        print(domains)
-        print(cur)
-        print(tail)
-        for v in cur[1]:
-            assignment_with_v = assignment + {cur[0]: v}
-            if self._rec_is_satisfiable(assignment_with_v, tail):
+        variables = [o.name for o in others]
+        for combination in itertools.product(*[o.domain for o in others]):
+            assignment = dict(zip(variables, combination))
+            assignment.update(fixed)
+            if self.is_satisfied(assignment):
                 return True
         return False
 
@@ -57,7 +47,7 @@ class Constraint:
         return self.predicate(assignment)
 
 
-def gac(vs, cs: Iterable[Constraint]):
+def gac(cs: Iterable[Constraint]):
     # put all edges (v, c) on open list/set
     to_do = {(v, c) for c in cs for v in c.scope}
     while to_do:
@@ -66,16 +56,14 @@ def gac(vs, cs: Iterable[Constraint]):
         # other Vs connected to C
         others = c.scope - {v}
         # find new domain for current v
-        new_dom = {value for value in v.domain if c.is_satisfiable({v: value}, others)}
-        print(new_dom)
+        new_dom = {value for value in v.domain if c.is_satisfiable({v.name: value}, others)}
         # if domain for v is changed
         if not v.domain == new_dom:
             # mark all other constraints that use v as dirty
-            print(f"Old domain: {v}, new domain: {new_dom}")
+            print(f"Old domain of {v.name}: {v.domain}, new domain: {new_dom}")
             to_do.update([(v_other, c_other) for c_other in cs for v_other in c_other.scope
                           if c_other != c and v_other != v])
             v.domain = new_dom
-            print(f"{c} and {others}")
     return {v for c in cs for v in c.variables}
 
 
@@ -83,14 +71,13 @@ x = Variable('X', {1, 2, 3})
 y = Variable('Y', {1, 2, 3})
 
 # TODO lieber lokale Benamung der Variablen, e.g. {'X': x, 'Y': y} ?
-x_smaller_y = Constraint("X<Y", lambda assignment: assignment['X'] < assignment['Y'], {x, y})
+x_smaller_y = Constraint("X<Y", lambda assignment: assignment['X'] < assignment['Y'], {'X': x, 'Y': y})
 
 G = nx.Graph()
 G.add_edge(x, x_smaller_y)
 G.add_edge(y, x_smaller_y)
 
-print(gac({x, y}, {x_smaller_y}))
-
+print(gac({x_smaller_y}))
 
 # labeldict = {}
 # labeldict[x] = r'$X$'
