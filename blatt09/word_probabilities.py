@@ -4,7 +4,10 @@ from typing import Dict, Set, TypeVar
 
 T = TypeVar('T')
 
-fn = 'res/short.txt'
+fn = 'res/gwv.txt'
+
+
+# fn = 'res/short.txt'
 
 
 def parse_file():
@@ -42,9 +45,9 @@ def parse_file():
 
 def draw_word(keys: Set[T], frequencies: Dict[T, int]) -> T:
     words = [(k, frequencies.get(k)) for k in keys]
-    s = sum([w[1] for w in words])
-    if s is 1:
+    if len(words) == 1:
         return words[0][0]
+    s = sum([w[1] for w in words])
     r = randrange(1, s)
     sum_of_probs = 0
     for w in words:
@@ -53,12 +56,14 @@ def draw_word(keys: Set[T], frequencies: Dict[T, int]) -> T:
             return w[0]
 
 
+def build_reddit_comment(meta, bigrams):
+    comment = ['<start>']
+    while comment[-1] != '<end>':
+        b = draw_word(meta[comment[-1]], bigrams)
+        comment.append(b[1])
+    return comment
+
+
 meta, bigrams = parse_file()
-
-comment = ['<start>']
-
-while comment[-1] != '<end>':
-    b = draw_word(meta[comment[-1]], bigrams)
-    comment.append(b[1])
-
-print(comment)
+for i in range(100):
+    print(" ".join(build_reddit_comment(meta, bigrams)))
