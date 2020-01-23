@@ -114,6 +114,7 @@ def expand_rolls(node: ExpansionNode):
 
 G = nx.DiGraph()
 
+# refactor/clean-up -> function/package this
 decision_nodes = []
 roll_nodes = []
 frontier = [init_state]
@@ -134,6 +135,18 @@ while frontier:
     if neighbors:
         frontier.extend(list(zip(*neighbors))[0])
         G.add_weighted_edges_from([(head, n, w) for (n, w) in neighbors])
+
+
+# find max ev / best decisions leading to max ev
+# 1) Expansion/Roll-Node: All edges are accumulated - EV(exp_node) = sum(EV(edges))
+# 2) Decisions-Nodes: One path is taken - EV(dec_node) = max(EV(edges))
+def maximize_ev(state: ExpansionNode):
+    for (child, prob) in G[state].items():
+        # sum child ev * prob
+        print((child, prob))
+
+
+maximize_ev(init_state)
 
 G.graph['graph'] = {'rankdir': 'LR'}
 pos = nx.nx_agraph.graphviz_layout(G, prog='dot')
