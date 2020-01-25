@@ -7,7 +7,7 @@ from fractions import Fraction
 # nxkwargs = {'with_labels': True, 'node_color': 'w', 'node_shape': 'o', 'edgecolors': 'black'}
 
 # Unicodes and unicorns
-to_dice = {
+dice_unicode = {
     1: '\u2680',
     2: '\u2681',
     3: '\u2682',
@@ -20,7 +20,7 @@ to_dice = {
 # 1-player state = Freie-Felder, Score, ReRolls(?)
 # 2-player state = (Freie Felder, Score), (Freie Felder, Score), Rerolls
 
-class ExpansionNode:
+class RollNode:
     def __init__(self, free):
         self.free = free
 
@@ -65,6 +65,23 @@ class DecisionNode():
         return self.__class__ == other.__class__ and self.free == other.free and self.roll == other.roll
 
 
+class Roll():
+    def __init__(self, dices):
+        self.dices = dices
+
+    def describe(self):
+        return f"{self.dices}"
+
+    def __repr__(self):
+        return self.describe()
+
+    def __hash__(self):
+        return self.dices.__hash__()
+
+    def __eq__(self, other):
+        return self.__class__ == other.__class__ and self.dices == other.dices
+
+
 def roll_results():
     """
 
@@ -84,7 +101,7 @@ rules = {
 
 # Initaler State ({FreieFelder},  Roll)
 # Für quasi-Optimalität (der Entscheidungen) brauchen wir unseren aktuellen Score nicht
-init_state = ExpansionNode(frozenset({'D', 'S'}))
+init_state = RollNode(frozenset({'D', 'S'}))
 
 
 # Find optimum decision for state: { free fields }
@@ -97,12 +114,12 @@ def expand_decisions(node: DecisionNode):
     :return: List(Tuple(ExpansionNode, Score))
     """
     # expand state for all possible decisions
-    return [(ExpansionNode(node.free - set(ff)), rules[ff](node.roll))
+    return [(RollNode(node.free - set(ff)), rules[ff](node.roll))
             for ff in node.free]
 
 
 # expand unrolled node
-def expand_rolls(node: ExpansionNode):
+def expand_rolls(node: RollNode):
     """
 
     :param node: ExpansionNode
@@ -121,7 +138,7 @@ frontier = [init_state]
 while frontier:
     head = frontier.pop()
     neighbors = []
-    if isinstance(head, ExpansionNode) and head.free:
+    if isinstance(head, RollNode) and head.free:
         roll_nodes.append(head)
         neighbors = expand_rolls(head)
     elif isinstance(head, DecisionNode) and head.free:
@@ -136,17 +153,55 @@ while frontier:
         frontier.extend(list(zip(*neighbors))[0])
         G.add_weighted_edges_from([(head, n, w) for (n, w) in neighbors])
 
+# Caching calculated evs
+ev_dict = {}
+
+optimal_decision_edges = []
+
+
+def calculate(state):
+    if isinstance(state, DecisionNode):
+        return ev_decision(state)
+    elif isinstance(state, RollNode):
+        return ev_roll(state)
+    raise TypeError(f"{state.__class__.__name__} was unexpected!")
+
+
+def get_or_calculate(d, state):
+    ev = ev_dict.get(state)
+    if not ev:
+        ev = calculate(state)
+        ev_dict[state] = ev
+    return ev
+
 
 # find max ev / best decisions leading to max ev
-# 1) Expansion/Roll-Node: All edges are accumulated - EV(exp_node) = sum(EV(edges))
+# 1) Expansion/Roll-Node: All edges are accumulated - EV(roll_node) = sum(EV(edges))
+def ev_roll(state: RollNode):
+    ev = 0
+    for (v, w) in G[state].items():
+        # sum(p_child * ev_child)
+        ev += w['weight'] * get_or_calculate(ev_dict, v)
+    # save all edges to opt
+    return ev
+
+
 # 2) Decisions-Nodes: One path is taken - EV(dec_node) = max(EV(edges))
-def maximize_ev(state: ExpansionNode):
-    for (child, prob) in G[state].items():
-        # sum child ev * prob
-        print((child, prob))
+def ev_decision(state: DecisionNode):
+    ev = 0
+    opt = None
+    for (v, w) in G[state].items():
+        # max(edge_value_child + ev_child)
+        ev_cur = w['weight'] + get_or_calculate(ev_dict, v)
+        if ev_cur > ev:
+            ev = ev_cur
+            opt = [state, v]
+    # save opt edge to opt
+    optimal_decision_edges.append(opt)
+    return ev
 
 
-maximize_ev(init_state)
+init_state_ev = ev_roll(init_state)
 
 G.graph['graph'] = {'rankdir': 'LR'}
 pos = nx.nx_agraph.graphviz_layout(G, prog='dot')
@@ -160,6 +215,8 @@ nx.draw_networkx_labels(G, pos, labels=node_labels, font_size=10)
 nx.draw_networkx_edges(G, pos, G.edges)
 labels = nx.get_edge_attributes(G, 'weight')
 nx.draw_networkx_edge_labels(G, pos, edge_labels=labels, rotate=False, font_size=6, label_pos=0.7)
+
+nx.draw_networkx_edges(G, pos, optimal_decision_edges, edge_color='red')
 
 plt.axis('off')
 plt.show()
