@@ -5,7 +5,7 @@ from graph import Graph
 from node import DecisionNode, RollNode
 
 # [x] DONE Warmup-Game MicroYahtzee (2-Fields: Double, Square, 1 Player)
-# [ ] ---- extend to: + Rerolls
+# [x] ---- extend to: + Rerolls
 # [ ] ---- extend to: + 2 Players (mit utility-3 am besten)
 # [x] ---- extend to: + More Dice (Combinatorics)
 
@@ -16,8 +16,11 @@ from node import DecisionNode, RollNode
 #       maximieren der Wahrscheinlichkeit, dass:
 #       hero_score > *Exepected* opp_score
 
+
+
+
 # Find optimum decision for state: { free fields }
-init_state = RollNode(frozenset({'D', 'S'}))
+init_state = RollNode(frozenset({'D'}), 2)
 
 yahtzee_graph = Graph(init_state)
 G = yahtzee_graph.graph
@@ -33,8 +36,11 @@ pos = nx.nx_agraph.graphviz_layout(G, prog='dot')
 nx.draw_networkx_nodes(G, pos, yahtzee_graph.decision_nodes, node_shape='s', node_color='w', edgecolors='black')
 nx.draw_networkx_nodes(G, pos, yahtzee_graph.roll_nodes, node_shape='o', node_color='w', edgecolors='black',
                        node_size=400)
-node_labels = dict([(n, f"{n.describe_simple()}") for n in G.nodes])
+node_labels = dict([(n, f"\n\n\n{n.describe_simple()}") for n in G.nodes])
 nx.draw_networkx_labels(G, pos, labels=node_labels, font_size=10)
+
+node_ev = dict([(n, f"{yahtzee_graph.ev_cache.get_or_calculate(n)}") for n in G.nodes])
+nx.draw_networkx_labels(G, pos, labels=node_ev, font_size=10, font_color='red')
 
 nx.draw_networkx_edges(G, pos, G.edges)
 labels = nx.get_edge_attributes(G, 'weight')
@@ -43,6 +49,6 @@ nx.draw_networkx_edge_labels(G, pos, edge_labels=labels, rotate=False, font_size
 nx.draw_networkx_edges(G, pos, yahtzee_graph.optimal_edges, edge_color='red')
 
 # plt.axis('off')
-plt.show()
+# plt.show()
 
-# plt.savefig("plot.png", dpi=300)
+plt.savefig("plot.png", dpi=300)

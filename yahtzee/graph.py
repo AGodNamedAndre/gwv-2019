@@ -1,9 +1,11 @@
 import networkx as nx
 
-from dice import roll_results, roll_probabilities
+from dice import roll_results, roll_probabilities, keep_combinations
 from node import RollNode, DecisionNode
 from score import rules
 
+NUM_DICE = 2
+NUM_REROLLS = 2
 
 class Graph:
     def __init__(self, initial_state):
@@ -48,6 +50,8 @@ class Graph:
     # find max ev / best decisions leading to max ev
     # 1) Expansion/Roll-Node: All edges are accumulated - EV(roll_node) = sum(EV(edges))
     def calculate_roll_node_ev(self, state: RollNode):
+        if not self.G[state].items():
+            return 1
         ev = 0
         for (v, w) in self.G[state].items():
             # sum(p_child * ev_child)
@@ -61,7 +65,7 @@ class Graph:
         opt = None
         for (v, w) in self.G[state].items():
             # max(edge_value_child + ev_child)
-            ev_cur = w['weight'] + self.ev_cache.get_or_calculate(v)
+            ev_cur = w['weight'] * self.ev_cache.get_or_calculate(v)
             if ev_cur > ev:
                 ev = ev_cur
                 opt = (state, v)
@@ -79,8 +83,15 @@ class Graph:
         """
         # expand state for all possible decisions
         self._decision_nodes.append(node)
-        edges = [(node, RollNode(node.free - set(ff)), rules[ff](node.roll))
-                 for ff in node.free]
+        edges = []
+        if node.rerolls > 0:
+            # case: we still can reroll 0..num_dice dices
+            edges = [(node, RollNode(node.free, node.rerolls - 1, k), 1)
+                     for k in keep_combinations(node.roll)]
+            print(edges)
+        else:
+            edges = [(node, RollNode(node.free - set(ff), NUM_REROLLS), rules[ff](node.roll))
+                     for ff in node.free]
         return edges
 
     def generate_roll_edges(self, node: RollNode):
@@ -91,12 +102,12 @@ class Graph:
         :return: List(Tuple(node, DecisionNode, probability))
         """
         self._roll_nodes.append(node)
-        if node.free:
-            edges = [(node, DecisionNode(node.free, roll), prob)
-                     for (roll, prob) in roll_probabilities(2)]
-            return edges
-        else:
+        if not node.free:
             return []
+        else:
+            edges = [(node, DecisionNode(node.free, tuple(sorted(list(node.keeper + roll))), node.rerolls), prob)
+                     for (roll, prob) in roll_probabilities(NUM_DICE - len(node.keeper))]
+            return edges
 
 
 # Caching calculated evs

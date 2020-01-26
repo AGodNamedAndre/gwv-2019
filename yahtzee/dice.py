@@ -1,4 +1,5 @@
 from fractions import Fraction
+from itertools import chain, combinations
 
 
 def roll_results():
@@ -10,16 +11,16 @@ def roll_results():
     # return map(lambda x: (x, Fraction(1, 6)), range(1, 7))
 
 
-counting_dict = None
+counting_dict = dict()
 
 DICE_SIDES = 4
 
 
 def roll_probabilities(num_dice):
     global counting_dict
-    if not counting_dict:
-        counting_dict = create_counting_dict(_roll_dice(num_dice))
-    return [tuple(el) for el in counting_dict.items()]
+    if num_dice not in counting_dict.keys():
+        counting_dict[num_dice] = create_counting_dict(_roll_dice(num_dice))
+    return [tuple(el) for el in counting_dict[num_dice].items()]
 
 
 # erzeuge alle würfelergebnisse
@@ -54,8 +55,15 @@ def create_counting_dict(rolls):
     return counter
 
 
-dices = _roll_dice(2)
-print(create_counting_dict(dices))
+def powerset(iterable):
+    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+    s = list(iterable)
+    return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
+
+
+# def reroll_combinations
+def keep_combinations(roll):
+    return set(list(powerset(roll)))
 
 
 class Roll():
