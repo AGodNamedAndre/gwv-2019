@@ -4,8 +4,9 @@ from dice import roll_results, roll_probabilities, keep_combinations
 from node import RollNode, DecisionNode
 from score import rules
 
-NUM_DICE = 2
-NUM_REROLLS = 2
+NUM_DICE = 1
+NUM_REROLLS = 1
+
 
 class Graph:
     def __init__(self, initial_state):
@@ -88,7 +89,6 @@ class Graph:
             # case: we still can reroll 0..num_dice dices
             edges = [(node, RollNode(node.free, node.rerolls - 1, k), 1)
                      for k in keep_combinations(node.roll)]
-            print(edges)
         else:
             edges = [(node, RollNode(node.free - set(ff), NUM_REROLLS), rules[ff](node.roll))
                      for ff in node.free]

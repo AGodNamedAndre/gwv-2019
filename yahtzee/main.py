@@ -16,11 +16,8 @@ from node import DecisionNode, RollNode
 #       maximieren der Wahrscheinlichkeit, dass:
 #       hero_score > *Exepected* opp_score
 
-
-
-
 # Find optimum decision for state: { free fields }
-init_state = RollNode(frozenset({'D'}), 2)
+init_state = RollNode(frozenset({'D', 'S'}), 1)
 
 yahtzee_graph = Graph(init_state)
 G = yahtzee_graph.graph
@@ -51,4 +48,4 @@ nx.draw_networkx_edges(G, pos, yahtzee_graph.optimal_edges, edge_color='red')
 # plt.axis('off')
 # plt.show()
 
-plt.savefig("plot.png", dpi=300)
+# plt.savefig("plot.png", dpi=300)

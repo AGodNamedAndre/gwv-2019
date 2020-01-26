@@ -13,7 +13,7 @@ def roll_results():
 
 counting_dict = dict()
 
-DICE_SIDES = 4
+DICE_SIDES = 6
 
 
 def roll_probabilities(num_dice):
