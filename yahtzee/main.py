@@ -46,6 +46,6 @@ nx.draw_networkx_edge_labels(G, pos, edge_labels=labels, rotate=False, font_size
 nx.draw_networkx_edges(G, pos, yahtzee_graph.optimal_edges, edge_color='red')
 
 # plt.axis('off')
-# plt.show()
+plt.show()
 
 # plt.savefig("plot.png", dpi=300)
