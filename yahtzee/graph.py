@@ -1,6 +1,6 @@
 import networkx as nx
 
-from dice import roll_results
+from dice import roll_results, roll_probabilities
 from node import RollNode, DecisionNode
 from score import rules
 
@@ -93,7 +93,7 @@ class Graph:
         self._roll_nodes.append(node)
         if node.free:
             edges = [(node, DecisionNode(node.free, roll), prob)
-                     for (roll, prob) in roll_results()]
+                     for (roll, prob) in roll_probabilities(2)]
             return edges
         else:
             return []

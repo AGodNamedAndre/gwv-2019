@@ -49,7 +49,8 @@ class DecisionNode:
         return f"{self.__class__.__name__}({self.describe()})"
 
     def __hash__(self):
-        return self.free.__hash__() << 1 + self.roll
+        # TODO be nicer to hash
+        return self.free.__hash__() + self.roll.__hash__()
 
     def __eq__(self, other):
         return self.__class__ == other.__class__ and self.free == other.free and self.roll == other.roll
