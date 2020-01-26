@@ -11,8 +11,8 @@ class Graph:
         self._root_node = initial_state
         self._decision_nodes = []
         self._roll_nodes = []
-        self._edges_opt = []
-        self.ev_cache = Cache(self.calculate_ev)
+        self._edges_opt = set()
+        self.ev_cache = Cache(self.calculate_node_ev)
 
     @property
     def graph(self):
@@ -30,35 +30,24 @@ class Graph:
     def optimal_edges(self):
         return self._edges_opt
 
-    def expand_graph(self):
+    def build_graph(self):
         frontier = [self._root_node]
         while frontier:
             current_node = frontier.pop()
-            if not current_node.free:
-                # no free categories to fill
-                self.roll_nodes.append(current_node)
-                continue
-            neighbors = []
-            if isinstance(current_node, RollNode):
-                self.roll_nodes.append(current_node)
-                neighbors = self.expand_rolls(current_node)
-            elif isinstance(current_node, DecisionNode):
-                self.decision_nodes.append(current_node)
-                neighbors = self.expand_decisions(current_node)
-            else:
-                raise TypeError(f"{current_node.__class__.__name__} was unexpected!")
-            if neighbors:
-                frontier.extend(list(zip(*neighbors))[0])
-                self.G.add_weighted_edges_from([(current_node, n, w) for (n, w) in neighbors])
+            successor_edges = current_node.generate_edges(self)
+            if successor_edges:
+                frontier.extend([v for (u, v, w) in successor_edges])
+                self.G.add_weighted_edges_from(successor_edges)
 
     def calculate_evs(self):
-        return self.calculate_ev(self._root_node)
+        return self.calculate_node_ev(self._root_node)
 
-    # ### TODO: Move stuff into states/nodes ###
+    def calculate_node_ev(self, state):
+        return state.ev(self)
 
     # find max ev / best decisions leading to max ev
     # 1) Expansion/Roll-Node: All edges are accumulated - EV(roll_node) = sum(EV(edges))
-    def ev_roll(self, state: RollNode):
+    def calculate_roll_node_ev(self, state: RollNode):
         ev = 0
         for (v, w) in self.G[state].items():
             # sum(p_child * ev_child)
@@ -67,7 +56,7 @@ class Graph:
         return ev
 
     # 2) Decisions-Nodes: One path is taken - EV(dec_node) = max(EV(edges))
-    def ev_decision(self, state: DecisionNode):
+    def calculate_decision_node_ev(self, state: DecisionNode):
         ev = 0
         opt = None
         for (v, w) in self.G[state].items():
@@ -75,44 +64,46 @@ class Graph:
             ev_cur = w['weight'] + self.ev_cache.get_or_calculate(v)
             if ev_cur > ev:
                 ev = ev_cur
-                opt = [state, v]
+                opt = (state, v)
         # save opt edge to opt
-        self._edges_opt.append(opt)
+        if opt:
+            self._edges_opt.add(opt)
         return ev
 
-    def calculate_ev(self, state):
-        if isinstance(state, DecisionNode):
-            return self.ev_decision(state)
-        elif isinstance(state, RollNode):
-            return self.ev_roll(state)
-        raise TypeError(f"{state.__class__.__name__} was unexpected!")
-
-    def expand_decisions(self, node: DecisionNode):
+    def generate_decision_edges(self, node: DecisionNode):
         """
+        Erzeugt die ausgehenden Kanten aus der gegebenen DeciscionNode.
 
         :param node: DecisionNode
-        :return: List(Tuple(ExpansionNode, Score))
+        :return: List(Tuple(node, ExpansionNode, Score))
         """
         # expand state for all possible decisions
-        return [(RollNode(node.free - set(ff)), rules[ff](node.roll))
-                for ff in node.free]
+        self._decision_nodes.append(node)
+        edges = [(node, RollNode(node.free - set(ff)), rules[ff](node.roll))
+                 for ff in node.free]
+        return edges
 
-    # expand unrolled node
-    def expand_rolls(self, node: RollNode):
+    def generate_roll_edges(self, node: RollNode):
         """
+        Erzeugt die ausgehenden Kanten aus der gegebenen RollNode.
 
         :param node: ExpansionNode
-        :return: List(Tuple(DecisionNode, probability))
+        :return: List(Tuple(node, DecisionNode, probability))
         """
-        return [(DecisionNode(node.free, r), p)
-                for (r, p) in roll_results()]
+        self._roll_nodes.append(node)
+        if node.free:
+            edges = [(node, DecisionNode(node.free, roll), prob)
+                     for (roll, prob) in roll_results()]
+            return edges
+        else:
+            return []
 
 
 # Caching calculated evs
 class Cache:
     def __init__(self, value_fun):
         self.values = {}
-        self.edges_opt = []
+        # self.edges_opt = []
         self.value_fun = value_fun
 
     def get_or_calculate(self, state):
